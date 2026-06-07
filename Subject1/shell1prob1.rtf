@@ -1,0 +1,55 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2868
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fmodern\fcharset0 Courier-Bold;\f2\fmodern\fcharset0 Courier;
+}
+{\colortbl;\red255\green255\blue255;\red174\green176\blue183;\red23\green23\blue26;\red89\green158\blue96;
+\red103\green107\blue114;\red195\green123\blue90;\red183\green98\blue39;}
+{\*\expandedcolortbl;;\csgenericrgb\c68235\c69020\c71765;\csgenericrgb\c9020\c9020\c10196;\csgenericrgb\c34902\c61961\c37647;
+\csgenericrgb\c40392\c41961\c44706;\csgenericrgb\c76471\c48235\c35294;\csgenericrgb\c71765\c38431\c15294;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 problem_1.sh\
+\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f1\b\fs26 \cf2 \cb3 #!/bin/bash\
+\
+
+\f2\b0 max_lines=-1\
+max_file=\cf4 ""\
+\
+\cf5 # Loop through all arguments passed to the script\
+\cf6 for \cf2 f \cf6 in \cf4 "\cf2 $@\cf4 "\cf2 ; \cf6 do\
+    \cf5 # Check if the argument is actually a valid file\
+    \cf6 if \cf2 [ -f \cf4 "\cf2 $f\cf4 " \cf2 ]; \cf6 then\
+        \cf7 echo \cf4 "=== Processing file: \cf2 $f\cf4  ==="\
+\
+        \cf5 # 1. Count and print lines containing at least one digit\
+        \cf2 digits=\cf6 $\cf7 (grep \cf2 -c \cf4 "[0-9]" "\cf2 $f\cf4 "\cf7 )\
+        echo \cf4 "Lines containing digits: \cf2 $digits\cf4 "\
+\
+        \cf5 # 2. Print the actual lines that contain ONLY lowercase letters and spaces\
+        \cf7 echo \cf4 "Lines containing ONLY lowercase letters:"\
+        \cf7 grep \cf2 -E \cf4 "^[a-z ]+$" "\cf2 $f\cf4 "\
+\
+        \cf5 # 3. Count those lowercase-only lines to check against our maximum\
+        \cf2 lower_count=\cf6 $\cf7 (grep \cf2 -E -c \cf4 "^[a-z ]+$" "\cf2 $f\cf4 "\cf7 )\
+\
+        \cf6 if \cf2 [ \cf4 "\cf2 $lower_count\cf4 " \cf2 -gt \cf4 "\cf2 $max_lines\cf4 " \cf2 ]; \cf6 then\
+            \cf2 max_lines=$lower_count\
+            max_file=$f\
+        \cf6 fi\
+\
+        \cf7 echo \cf4 "" \cf5 # Just an empty line for clean formatting\
+    \cf6 else\
+        \cf7 echo \cf4 "Warning: '\cf2 $f\cf4 ' is not a valid file."\
+    \cf6 fi\
+done\
+\
+\cf5 # 4. Print the final winner at the very end\
+\cf6 if \cf2 [ \cf4 "\cf2 $max_lines\cf4 " \cf2 -gt -1 ]; \cf6 then\
+    \cf7 echo \cf4 "=========================================="\
+    \cf7 echo \cf4 "File with the most lowercase-only lines: \cf2 $max_file\cf4  (\cf2 $max_lines\cf4  lines)"\
+\cf6 fi\
+}

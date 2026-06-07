@@ -1,0 +1,96 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2868
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fmodern\fcharset0 Courier;}
+{\colortbl;\red255\green255\blue255;\red164\green160\blue78;\red23\green23\blue26;\red89\green158\blue96;
+\red103\green107\blue114;\red195\green123\blue90;\red71\green149\blue242;\red174\green176\blue183;\red38\green157\blue169;
+\red92\green96\blue103;}
+{\*\expandedcolortbl;;\csgenericrgb\c64314\c62745\c30588;\csgenericrgb\c9020\c9020\c10196;\csgenericrgb\c34902\c61961\c37647;
+\csgenericrgb\c40392\c41961\c44706;\csgenericrgb\c76471\c48235\c35294;\csgenericrgb\c27843\c58431\c94902;\csgenericrgb\c68235\c69020\c71765;\csgenericrgb\c14902\c61569\c66275;
+\csgenericrgb\c36078\c37647\c40392;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 main.c\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\fs26 \cf2 \cb3 #include \cf4 <stdio.h>\
+\cf2 #include \cf4 <stdlib.h>\
+\cf2 #include \cf4 <unistd.h>\
+\cf2 #include \cf4 <sys/wait.h>\
+\cf2 #include \cf4 <string.h>\
+\cf2 #include \cf4 <ctype.h>\
+\
+\cf5 // Helper function to check if a line is strictly alphanumeric\
+\cf6 int \cf7 is_alphanumeric_line\cf8 (\cf6 const char \cf8 *line) \{\
+    \cf6 int \cf8 len = \cf7 strlen\cf8 (line);\
+\
+    \cf5 // Ignore completely empty lines\
+    \cf6 if \cf8 (len == \cf9 0 \cf8 || (len == \cf9 1 \cf8 && line[\cf9 0\cf8 ] == \cf4 '\cf6 \\n\cf4 '\cf8 )) \cf6 return \cf9 0\cf8 ;\
+\
+    \cf6 for \cf8 (\cf6 int \cf8 i = \cf9 0\cf8 ; line[i] != \cf4 '\cf6 \\0\cf4 '\cf8 ; i++) \{\
+        \cf6 if \cf8 (line[i] == \cf4 '\cf6 \\n\cf4 '\cf8 ) \cf6 continue\cf8 ; \cf5 // Ignore the newline at the end\
+        \cf6 if \cf8 (!\cf7 isalnum\cf8 (line[i])) \cf6 return \cf9 0\cf8 ; \cf5 // If any char is NOT alnum, fail\
+    \cf8 \}\
+    \cf6 return \cf9 1\cf8 ;\
+\}\
+\
+\cf5 // Helper function to check if a character is a vowel\
+\cf6 int \cf7 is_vowel\cf8 (\cf6 char \cf8 c) \{\
+    c = \cf7 tolower\cf8 (c); \cf5 // Make lowercase to simplify checking\
+    \cf6 return \cf10 (\cf8 c == \cf4 'a' \cf8 || c == \cf4 'e' \cf8 || c == \cf4 'i' \cf8 || c == \cf4 'o' \cf8 || c == \cf4 'u'\cf10 )\cf8 ;\
+\}\
+\
+\cf6 int \cf7 main\cf8 () \{\
+    \cf6 int \cf8 p[\cf9 2\cf8 ];\
+\
+    \cf5 // Create the internal pipe\
+    \cf6 if \cf8 (\cf7 pipe\cf8 (p) == -\cf9 1\cf8 ) \{\
+        \cf7 perror\cf8 (\cf4 "Pipe failed"\cf8 );\
+        \cf6 return \cf9 1\cf8 ;\
+    \}\
+\
+    \cf6 if \cf8 (\cf7 fork\cf8 () == \cf9 0\cf8 ) \{\
+        \cf5 // --- CHILD PROCESS ---\
+        \cf7 close\cf8 (p[\cf9 1\cf8 ]); \cf5 // Close writing end\
+\
+        \cf8 FILE *in = \cf7 fdopen\cf8 (p[\cf9 0\cf8 ], \cf4 "r"\cf8 );\
+        \cf6 char \cf8 line[\cf9 256\cf8 ];\
+\
+        \cf6 while \cf8 (\cf7 fgets\cf8 (line, \cf6 sizeof\cf8 (line), in)) \{\
+            \cf5 // Replace vowels with '*'\
+            \cf6 for \cf8 (\cf6 int \cf8 i = \cf9 0\cf8 ; line[i] != \cf4 '\cf6 \\0\cf4 '\cf8 ; i++) \{\
+                \cf6 if \cf8 (\cf7 is_vowel\cf8 (line[i])) \{\
+                    line[i] = \cf4 '*'\cf8 ;\
+                \}\
+            \}\
+            \cf7 printf\cf8 (\cf4 "[Child Output]: %s"\cf8 , line);\
+        \}\
+\
+        \cf7 fclose\cf8 (in);\
+        \cf7 exit\cf8 (\cf9 0\cf8 );\
+    \}\
+\
+    \cf5 // --- PARENT PROCESS ---\
+    \cf7 close\cf8 (p[\cf9 0\cf8 ]); \cf5 // Close reading end\
+\
+    \cf8 FILE *out = \cf7 fdopen\cf8 (p[\cf9 1\cf8 ], \cf4 "w"\cf8 );\
+    \cf6 char \cf8 line[\cf9 256\cf8 ];\
+\
+    \cf7 printf\cf8 (\cf4 "Enter text (Press Cmd+D / Ctrl+D to stop):\cf6 \\n\cf4 "\cf8 );\
+\
+    \cf6 while \cf8 (\cf7 fgets\cf8 (line, \cf6 sizeof\cf8 (line), stdin)) \{\
+        \cf6 if \cf8 (\cf7 is_alphanumeric_line\cf8 (line)) \{\
+            \cf7 fputs\cf8 (line, out);\
+            \cf7 fflush\cf8 (out); \cf5 // Instantly push the line through the pipe\
+        \cf8 \}\
+    \}\
+\
+    \cf7 fclose\cf8 (out); \cf5 // Sends EOF to the child\
+    \cf7 wait\cf8 (NULL);  \cf5 // Wait for child to finish printing\
+\
+    \cf6 return \cf9 0\cf8 ;\
+\}\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \cb1  \
+}
