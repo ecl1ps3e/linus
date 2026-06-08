@@ -1,0 +1,20 @@
+problem_1.sh
+
+#!/bin/bash
+
+if [ ! -d "$1" ]; then
+    echo "Error: Please provide a valid directory."
+    exit 1
+fi
+
+find "$1" -type f | while read f; do
+    if file "$f" | grep -E -q "text"; then
+        echo "File: $f"
+
+        lines=$(wc -l < "$f")
+        words=$(wc -w < "$f")
+
+        echo "Lines: $lines, Words: $words"
+        echo "-------------------------"
+    fi
+done
