@@ -1,0 +1,71 @@
+server.c
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <dirent.h>
+
+#define FIFO_C2S "fifo_c2s"
+#define FIFO_S2C "fifo_s2c"
+
+int main() {
+    // 1. Create the physical FIFO files
+    mkfifo(FIFO_C2S, 0666);
+    mkfifo(FIFO_S2C, 0666);
+
+    printf("[Server] Waiting for client request...\n");
+
+    // 2. Open C2S for reading (This will BLOCK until the client opens it)
+    int fd_in = open(FIFO_C2S, O_RDONLY);
+    char dir_name[256];
+    int n = read(fd_in, dir_name, sizeof(dir_name) - 1);
+
+    if (n > 0) {
+        dir_name[n] = '\0';
+        dir_name[strcspn(dir_name, "\n")] = '\0'; // Remove newline
+    }
+    close(fd_in);
+
+    printf("[Server] Received directory name: '%s'\n", dir_name);
+
+    // 3. Process the request
+    int fd_out = open(FIFO_S2C, O_WRONLY);
+    char response[256];
+    DIR* dir = opendir(dir_name);
+
+    if (dir == NULL) {
+        snprintf(response, sizeof(response), "Error: Directory '%s' does not exist.", dir_name);
+    } else {
+        closedir(dir);
+        char cmd[512];
+
+        // Build a shell command to count text files inside the given directory
+        snprintf(cmd, sizeof(cmd), "find \"%s\" -type f -exec file {} + | grep -c -i text", dir_name);
+
+        // Execute the command and read the output
+        FILE *fp = popen(cmd, "r");
+        if (fp != NULL) {
+            char output[64] = "0\n";
+            fgets(output, sizeof(output), fp);
+            output[strcspn(output, "\n")] = '\0'; // Remove newline from output
+            snprintf(response, sizeof(response), "Text files count: %s", output);
+            pclose(fp);
+        } else {
+            snprintf(response, sizeof(response), "Error executing search command.");
+        }
+    }
+
+    // 4. Send response back to client
+    write(fd_out, response, strlen(response));
+    close(fd_out);
+
+    // 5. Clean up the physical FIFO files
+    unlink(FIFO_C2S);
+    unlink(FIFO_S2C);
+
+    printf("[Server] Shutting down.\n");
+    return 0;
+}
