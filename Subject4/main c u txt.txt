@@ -1,0 +1,80 @@
+main.c
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <string.h>
+#include <ctype.h>
+
+// Helper function to check if a line is strictly alphanumeric
+int is_alphanumeric_line(const char *line) {
+    int len = strlen(line);
+
+    // Ignore completely empty lines
+    if (len == 0 || (len == 1 && line[0] == '\n')) return 0;
+
+    for (int i = 0; line[i] != '\0'; i++) {
+        if (line[i] == '\n') continue; // Ignore the newline at the end
+        if (!isalnum(line[i])) return 0; // If any char is NOT alnum, fail
+    }
+    return 1;
+}
+
+// Helper function to check if a character is a vowel
+int is_vowel(char c) {
+    c = tolower(c); // Make lowercase to simplify checking
+    return (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u');
+}
+
+int main() {
+    int p[2];
+
+    // Create the internal pipe
+    if (pipe(p) == -1) {
+        perror("Pipe failed");
+        return 1;
+    }
+
+    if (fork() == 0) {
+        // --- CHILD PROCESS ---
+        close(p[1]); // Close writing end
+
+        FILE *in = fdopen(p[0], "r");
+        char line[256];
+
+        while (fgets(line, sizeof(line), in)) {
+            // Replace vowels with '*'
+            for (int i = 0; line[i] != '\0'; i++) {
+                if (is_vowel(line[i])) {
+                    line[i] = '*';
+                }
+            }
+            printf("[Child Output]: %s", line);
+        }
+
+        fclose(in);
+        exit(0);
+    }
+
+    // --- PARENT PROCESS ---
+    close(p[0]); // Close reading end
+
+    FILE *out = fdopen(p[1], "w");
+    char line[256];
+
+    printf("Enter text (Press Cmd+D / Ctrl+D to stop):\n");
+
+    while (fgets(line, sizeof(line), stdin)) {
+        if (is_alphanumeric_line(line)) {
+            fputs(line, out);
+            fflush(out); // Instantly push the line through the pipe
+        }
+    }
+
+    fclose(out); // Sends EOF to the child
+    wait(NULL);  // Wait for child to finish printing
+
+    return 0;
+}
+ 
