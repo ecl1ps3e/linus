@@ -1,0 +1,75 @@
+Problema c++
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/wait.h>
+#include <ctype.h>
+
+int main() {
+    int p1[2], p2[2];
+
+    if (pipe(p1) == -1 || pipe(p2) == -1) {
+        perror("Pipe failed");
+        return 1;
+    }
+
+    if (fork() == 0) {
+        close(p1[1]);
+        close(p2[0]);
+        close(p2[1]);
+
+        FILE *in = fdopen(p1[0], "r");
+        char line[256];
+
+        while (fgets(line, sizeof(line), in)) {
+            printf("[Child 1 (Letter)]: %s", line);
+        }
+
+        fclose(in);
+        exit(0);
+    }
+
+    if (fork() == 0) {
+        close(p2[1]);
+        close(p1[0]);
+        close(p1[1]);
+
+        FILE *in = fdopen(p2[0], "r");
+        char line[256];
+
+        while (fgets(line, sizeof(line), in)) {
+            printf("[Child 2 (Digit)]: %s", line);
+        }
+
+        fclose(in);
+        exit(0);
+    }
+
+    close(p1[0]);
+    close(p2[0]);
+
+    FILE *out1 = fdopen(p1[1], "w");
+    FILE *out2 = fdopen(p2[1], "w");
+    char line[256];
+
+    printf("Enter lines of text (Press Cmd+D / Ctrl+D to stop):\n");
+    while (fgets(line, sizeof(line), stdin)) {
+        if (isalpha(line[0])) {
+            fputs(line, out1);
+            fflush(out1);
+        } else if (isdigit(line[0])) {
+            fputs(line, out2);
+            fflush(out2);
+        }
+    }
+
+    fclose(out1);
+    fclose(out2);
+
+    wait(NULL);
+    wait(NULL);
+
+    return 0;
+}
