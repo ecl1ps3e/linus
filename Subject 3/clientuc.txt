@@ -1,0 +1,40 @@
+client_c
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <string.h>
+
+#define FIFO_C2S "fifo_c2s"
+#define FIFO_S2C "fifo_s2c"
+
+int main() {
+    // 1. Open connection to server (Fails if server isn't running)
+    int fd_out = open(FIFO_C2S, O_WRONLY);
+    if (fd_out == -1) {
+        printf("Error: Run the server program first!\n");
+        return 1;
+    }
+
+    // 2. Get directory name from user
+    char dir_name[256];
+    printf("Enter directory name: ");
+    if (fgets(dir_name, sizeof(dir_name), stdin) == NULL) return 1;
+    dir_name[strcspn(dir_name, "\n")] = '\0'; // Remove newline
+
+    // 3. Send to server
+    write(fd_out, dir_name, strlen(dir_name));
+    close(fd_out);
+
+    // 4. Wait for and read the response
+    int fd_in = open(FIFO_S2C, O_RDONLY);
+    char response[256];
+    int n = read(fd_in, response, sizeof(response) - 1);
+    if (n >= 0) response[n] = '\0';
+
+    printf("Server response: %s\n", response);
+    close(fd_in);
+
+    return 0;
+}
