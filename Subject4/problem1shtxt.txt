@@ -1,0 +1,35 @@
+problem_1.sh
+
+#!/bin/bash
+
+# Check if we have at least a word and one file
+if [ "$#" -lt 2 ]; then
+    echo "Usage: $0 <word> <file1> <file2> ..."
+    exit 1
+fi
+
+# The first argument is the word to search for
+word=$1
+
+# Shift moves all arguments one position to the left (so $2 becomes $1)
+# This lets us easily loop over the files
+shift
+
+for f in "$@"; do
+    if [ -f "$f" ]; then
+        # 1. Count how many times the word appears
+        # -o prints each match on a new line, allowing wc -l to count them accurately
+        count=$(grep -E -o "\b$word\b" "$f" | wc -l)
+
+        # 2. Replace the word with XXX
+        # We output to a temporary file, then overwrite the original.
+        # This safely avoids the differences between Mac and Linux 'sed -i' commands!
+        sed -E "s/\b$word\b/XXX/g" "$f" > temp.txt
+        mv temp.txt "$f"
+
+        # 3. Print the result
+        echo "File: $f - Replacements made: $count"
+    else
+        echo "Warning: File '$f' does not exist."
+    fi
+done
