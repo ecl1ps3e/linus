@@ -1,0 +1,35 @@
+problem_1.sh
+
+#!/bin/bash
+
+if [ $# -eq 0 ]; then
+    echo "Please provide at least one file as an argument."
+    exit 1
+fi
+
+for f in "$@"; do
+    if [ -f "$f" ]; then
+        echo "=== Processing file: $f ==="
+
+        # Use grep with Extended Regex (-E) and ignore-case (-i)
+        # \b([a-zA-Z]+)\b matches a full word and captures it in memory
+        # .* skips across any characters in the middle of the line
+        # \b\1\b looks back at memory and matches the exact same word again
+        echo "Lines containing repeated words:"
+        grep -E -i '\b([a-zA-Z]+)\b.*\b\1\b' "$f"
+
+        # Run it again with -c to get the mathematical count
+        count=$(grep -E -i -c '\b([a-zA-Z]+)\b.*\b\1\b' "$f")
+        echo "Number of lines with repeating words: $count"
+        echo "-----------------------------------"
+    else
+        echo "Warning: '$f' is not a valid file."
+        echo "-----------------------------------"
+    fi
+done
+
+
+test.txt
+
+The quick brown fox jumps over the lazy dog.
+ 
