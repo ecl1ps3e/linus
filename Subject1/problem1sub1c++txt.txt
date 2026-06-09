@@ -15,7 +15,6 @@ int main() {
     }
 
     if (fork() == 0) {
-        // Child Process
         close(p2c[1]);
         close(c2p[0]);
 
@@ -23,7 +22,6 @@ int main() {
         int n = read(p2c[0], filename, sizeof(filename) - 1);
         filename[n] = '\0';
 
-        // Remove the newline character that fgets adds
         filename[strcspn(filename, "\n")] = '\0';
         close(p2c[0]);
 
@@ -38,7 +36,6 @@ int main() {
             while ((ch = fgetc(file)) != EOF) {
                 if (ch == '\n') count++;
             }
-            // Add 1 for the last line if the file doesn't end with a newline
             if (count > 0 || ftell(file) > 0) count++;
 
             fclose(file);
@@ -50,7 +47,6 @@ int main() {
         exit(0);
     }
 
-    // Parent Process
     close(p2c[0]);
     close(c2p[1]);
 
@@ -58,11 +54,9 @@ int main() {
     printf("Enter filename: ");
     fgets(filename, sizeof(filename), stdin);
 
-    // Send filename to child
     write(p2c[1], filename, strlen(filename));
     close(p2c[1]);
 
-    // Read response from child
     char response[256];
     int n = read(c2p[0], response, sizeof(response) - 1);
     response[n] = '\0';
