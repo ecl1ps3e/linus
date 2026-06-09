@@ -6,21 +6,16 @@ problem_1.sh
 max_lines=-1
 max_file=""
 
-# Loop through all arguments passed to the script
 for f in "$@"; do
-    # Check if the argument is actually a valid file
     if [ -f "$f" ]; then
         echo "=== Processing file: $f ==="
 
-        # 1. Count and print lines containing at least one digit
         digits=$(grep -c "[0-9]" "$f")
         echo "Lines containing digits: $digits"
 
-        # 2. Print the actual lines that contain ONLY lowercase letters and spaces
         echo "Lines containing ONLY lowercase letters:"
         grep -E "^[a-z ]+$" "$f"
 
-        # 3. Count those lowercase-only lines to check against our maximum
         lower_count=$(grep -E -c "^[a-z ]+$" "$f")
 
         if [ "$lower_count" -gt "$max_lines" ]; then
@@ -28,13 +23,12 @@ for f in "$@"; do
             max_file=$f
         fi
 
-        echo "" # Just an empty line for clean formatting
+        echo ""
     else
         echo "Warning: '$f' is not a valid file."
     fi
 done
 
-# 4. Print the final winner at the very end
 if [ "$max_lines" -gt -1 ]; then
     echo "=========================================="
     echo "File with the most lowercase-only lines: $max_file ($max_lines lines)"
